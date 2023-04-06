@@ -12,3 +12,10 @@ def CIR(alpha, b, sigma, T, k, S_0):
         S[i] = S[i-1] + dS
         if S[i] < 0 : S[i] = "Erreur"
     return S
+
+
+def multiCIR(alpha, b, sigma, T, k, S_0): 
+    multiCIR = []
+    for i in range(nb_samples): 
+        multiCIR.append(CIR(alpha, b, sigma, T, k, S_0))
+    return multiCIR
