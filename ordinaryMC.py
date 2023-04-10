@@ -49,7 +49,6 @@ def ordinary_mc_sim(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
     OUTPUT:
         (Numpy.ndarray): A one-dimensional array of present value of simulated payoffs
     """
-    dt = T / k
     present_payoffs = np.zeros(nb_samples)
     multiCIR = CIR.multiCIR(alpha, b, sigma, T, k, S_0, nb_samples)
     
