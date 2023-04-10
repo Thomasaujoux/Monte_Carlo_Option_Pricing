@@ -28,7 +28,7 @@ def pv_calc(payoff, r, T):
         T (float): Period of time
     
     OUTPUT:
-        (float): Present value of FV
+        (float): Present value of payoff
     """
     
     return payoff * np.exp(-r * T)
@@ -38,13 +38,15 @@ def ordinary_mc_sim(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
     Conducts MC simulation,
     
     INPUT:
-        no_of_paths (int): Number of samples in simulation
-        n_steps (int): Number of price step we aim to simulate in each path
+        nb_samples (int): Number of samples in simulation
+        k (int): Number of price step we aim to simulate in each path
         S_0 (float): Underlying asset price at time zero
         T (float): Time period of option contract
         r (float): Risk-netural interest rate
         sigma (float): Volatility in the environment
-        x_price (float): Exercise price of the option
+        K (float): Exercise price of the option
+        alpha (float): taux de convergence
+        b (float): taux de convergence
         
     OUTPUT:
         (Numpy.ndarray): A one-dimensional array of present value of simulated payoffs
@@ -62,16 +64,18 @@ def sim_iterator(max_sample, k, S_0, T, r, sigma, K, alpha, b):
     
     INPUT:
         max_sample (int): Maximum sample size for the iteration of simulations
-        n_steps (int): Number of price step we aim to simulate in each path
+        k (int): Number of price step we aim to simulate in each path
         S_0 (float): Underlying asset price at time zero
         T (float): Time period of option contract
         r (float): Risk-netural interest rate
         sigma (float): Volatility in the environment
         x_price (float): Exercise price of the option
-        method (string): 'sobol', 'halton' or 'ordinary'
+        K (float): Exercise price of the option
+        alpha (float): taux de convergence
+        b (float): taux de convergence
     
     OUTPUT:
-        (numpy.ndarray): confidence intervals of the simulations
+        (numpy.ndarray): confidence intervals of the simulations #pas encore intégré
         (numpy.ndarray): price estimations of the simulations
     """
     
