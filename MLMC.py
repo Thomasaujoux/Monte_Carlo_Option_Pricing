@@ -16,15 +16,15 @@ def h_l(k,T,l):
     h_l = k**(-l)*T
     return h_l
 
-def N_l(variance, k, M,l, L, epsilon):
+def N_l(variance, k, T,l, L, epsilon):
     
     
     
     sum_vh = 0 
-    for l in range(0,L)
-        sum_vh = sum_vh + np.sqrt(variance[l]/h_l(k,M,l))
+    for l in range(0,L):
+        sum_vh = sum_vh + np.sqrt(variance[l]/h_l(k,T,l))
         
-    N_l = int(np.ceil(2*epsilon**(-2)*np.sqrt(variance[l]*h_l(k,M,l))*sum_vh))
+    N_l = int(np.ceil(2*epsilon**(-2)*np.sqrt(variance[l]*h_l(k,T,l))*sum_vh))
                       
     return N_l
 
@@ -34,11 +34,12 @@ def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
     L = 0 
     N = []
     epsilon = np.exp(-1) #fixé de cette façon dans le papier
+    convergence = False
     
     while convergence==False or L < 2:
         # Initialize arrays for sample means and variances
-        means = np.zeros(L)
-        variances = np.zeros(L)
+        means = np.zeros(L+1)
+        variances = np.zeros(L+1)
         for l in range(L+1):
             N.append(10**4)
             multiCIR_ML = CIR.multiCIR_ML(alpha, b, sigma, T, k, S_0, N[l], L)
@@ -50,7 +51,7 @@ def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
             variances[l] = np.var(values) #2) estimate VL using an initial N_L = 10**4 samples
     
             #3) define optimal N_l, l = 0,...,L using Eqn. (12)
-            New = N_l(variance, k, M,l, L, epsilon)
+            New = N_l(variances, k, T, l, L, epsilon)
     
         #4)evaluate extra samples at each level as needed for new N_l
             if New > N[l]:
