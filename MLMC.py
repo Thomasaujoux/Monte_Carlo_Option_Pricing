@@ -50,16 +50,18 @@ def optimalL(k, S_0, T, r, sigma, K, alpha, b):
 
 def MLMC(nb_samples, k, S_0, T, r, sigma, K, alpha, b, L):
     """
-    Conducts MC simulation,
+    Conducts MLMC method,
     
     INPUT:
-        no_of_paths (int): Number of samples in simulation
-        n_steps (int): Number of price step we aim to simulate in each path
+        nb_samples (int): Number of samples in simulation
+        k (int): Number of price step we aim to simulate in each path
         S_0 (float): Underlying asset price at time zero
         T (float): Time period of option contract
         r (float): Risk-netural interest rate
         sigma (float): Volatility in the environment
-        x_price (float): Exercise price of the option
+        K (float): Exercise price of the option
+        alpha (float): taux de convergence
+        b (float): taux de convergence
         
     OUTPUT:
         (Numpy.ndarray): A one-dimensional array of present value of simulated payoffs
@@ -68,16 +70,17 @@ def MLMC(nb_samples, k, S_0, T, r, sigma, K, alpha, b, L):
     multiCIR_ML = CIR.multiCIR_ML(alpha, b, sigma, T, k, S_0, nb_samples, L)
     
     for i in range(nb_samples):
-        present_payoffs[i] = ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multiCIR_ML[i], K), r, T)
-        
-    values = np.array([present_payoffs for sample in samples])
-    
-    
+        present_payoffs[i] = ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multiCIR[i], K), r, T)
     return(present_payoffs)
+
+
 
 def ml_mc_sim(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
     L = 0
+    sim = []
     while 'condition de convergence pas respectée'
         L = L+1
-        sim = MLMC(nb_samples, k, S_0, T, r, sigma, K, alpha, b, L)
+        sim[l] = MLMC(nb_samples, k, S_0, T, r, sigma, K, alpha, b, L)
+        values = np.array([present_payoffs for sample in samples])
+    
     
