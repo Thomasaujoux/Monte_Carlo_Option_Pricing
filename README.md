@@ -4,4 +4,5 @@ Structure des fichiers :
 - *Main* est le notebook résumant notre travail. Il fait appel aux fichiers Python annexes suivants: 
     - Pour l'implémentation du modèle CIR : *CIR*
     - Pour l'algorithme de Monte Carlo standard  : *ordinaryMC*
-    - A COMPLETER...
+    - Pour l'algorithme de quasi Monte Carlo : *QMC*
+    - Pour l'algorithme de Multi Level Monte Carlo : *MLMC*
