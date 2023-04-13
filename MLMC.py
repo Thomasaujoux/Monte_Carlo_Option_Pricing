@@ -23,7 +23,8 @@ def N_l(variance, k, T,l, L, epsilon):
     sum_vh = 0 
     for l in range(0,L):
         sum_vh = sum_vh + np.sqrt(variance[l]/h_l(k,T,l))
-        
+    print(sum_vh)
+    print(2*epsilon**(-2)*np.sqrt(variance[l]*h_l(k,T,l))*sum_vh)
     N_l = int(np.ceil(2*epsilon**(-2)*np.sqrt(variance[l]*h_l(k,T,l))*sum_vh))
                       
     return N_l
@@ -41,18 +42,19 @@ def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
         means = np.zeros(L+1)
         variances = np.zeros(L+1)
         for l in range(L+1):
+            
             N.append(10**4)
-            multiCIR_ML = CIR.multiCIR_ML(alpha, b, sigma, T, k, S_0, N[l], L)
+            multiCIR_ML = CIR.multiCIR_ML(alpha, b, sigma, T, k, S_0, N[l], L+1)
+            print(multiCIR_ML)
             values = np.array([ordinaryMC.pv_calc(ordinaryMC.payoff_calc(sample, K), r, T) for sample in multiCIR_ML])
-    
         
             # Compute the sample mean and variance at each level
             means[l] = np.mean(values)
             variances[l] = np.var(values) #2) estimate VL using an initial N_L = 10**4 samples
-    
+            
             #3) define optimal N_l, l = 0,...,L using Eqn. (12)
             New = N_l(variances, k, T, l, L, epsilon)
-    
+            
         #4)evaluate extra samples at each level as needed for new N_l
             if New > N[l]:
                 Bis_multiCIR_ML = CIR.multiCIR_ML(alpha, b, sigma, T, k, S_0, New-N[l], L)
@@ -60,10 +62,11 @@ def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
                 N[l] = New
                 
                 
-                
             if np.abs(means[L] - k**(-1)*means[L-1]) < 1/np.sqrt(2)*((k**2)-1)**epsilon:
                 convergence=True
+                
             else :
                 L = L+1
+           
     
     return values, L, N

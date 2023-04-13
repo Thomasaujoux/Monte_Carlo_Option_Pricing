@@ -22,11 +22,11 @@ def multiCIR(alpha, b, sigma, T, k, S_0, nb_samples):
 
 def CIR_ML(alpha, b, sigma, T, k, S_0, L):
     delta = np.zeros(L+1)
-    for l in range(0,L):
+    for l in range(0,L+1):
         delta[l] = 2 ** (-l)
     S = np.zeros(k+1)
     S[0] = S_0
-    for l in range(0,L):
+    for l in range(0,L+1):
         for i in range(1, k+1):
             S[i] = delta[l] * alpha * (b - S[i-1]) + sigma * np.sqrt(S[i-1]) * np.random.normal(scale=delta[l]) + S[i-1]
             if S[i] < 0 : S[i] = "Erreur"
