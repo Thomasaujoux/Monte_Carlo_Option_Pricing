@@ -29,6 +29,12 @@ def N_l(variance, k, T,l, L, epsilon):
                       
     return N_l
 
+def mc_telescopic_sum(L,multiCIR_ML, K, r, T, S_0,sigma,alpha, b): 
+    pv_calc0 = ordinary_mc_sim(nb_samples, int(np.ceil(T), S_0, T, r, sigma, K, alpha, b)
+    pv_calc_sum= 0
+    for l in range(1,L):
+        pv_calc_sum = pv_calc + ordinary_mc_sim(nb_samples, int(np.ceil(T/2**(-l), S_0, T, r, sigma, K, alpha, b)
+
 def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
     
     #1) start with L=0
@@ -45,8 +51,7 @@ def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
             
             N.append(10**4)
             multiCIR_ML = CIR.multiCIR_ML(alpha, b, sigma, T, k, S_0, N[l], L+1)
-            print(multiCIR_ML)
-            values = np.array([ordinaryMC.pv_calc(ordinaryMC.payoff_calc(sample, K), r, T) for sample in multiCIR_ML])
+            values = np.array([mc_telescopic_sum(ordinaryMC.pv_calc(ordinaryMC.payoff_calc(sample, K), r, T)) for sample in multiCIR_ML])
         
             # Compute the sample mean and variance at each level
             means[l] = np.mean(values)
