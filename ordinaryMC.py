@@ -57,6 +57,7 @@ def ordinary_mc_sim(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
     for i in range(nb_samples):
         present_payoffs[i] = pv_calc(payoff_calc(multiCIR[i], K), r, T)
     return(present_payoffs)
+# et oui on retourne tout le tableau pour les stats desc : box plot, diagramme de rep etc...
 
 def sim_iterator(max_sample, k, S_0, T, r, sigma, K, alpha, b):
     """
