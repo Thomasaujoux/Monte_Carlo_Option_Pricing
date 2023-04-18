@@ -2,6 +2,7 @@ import numpy as np
 from scipy import stats
 import matplotlib.pyplot as plt
 import CIR
+import comparaison
 
 def payoff_calc(S_ti, K):
     """
@@ -81,10 +82,11 @@ def sim_iterator(max_sample, k, S_0, T, r, sigma, K, alpha, b):
     """
     
     mean_pv_payoffs = np.zeros(int(max_sample / 10))
-    
+    confidence_intervals = np.array([None, None])
+
     for nb_samples in range(10, max_sample + 1, 10):
         present_payoffs = ordinary_mc_sim(nb_samples,k, S_0, T, r, sigma, K, alpha, b)
         mean_pv_payoffs[int(nb_samples/10) - 1] = np.mean(present_payoffs)
+        confidence_intervals = np.row_stack((confidence_intervals, comparaison.CI_calc(present_payoffs)))
 
-    
-    return mean_pv_payoffs
+    return(mean_pv_payoffs, confidence_intervals)
