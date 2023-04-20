@@ -80,6 +80,24 @@ def sobol_generator(nb_samples, k):
         sob_array = np.append(sob_array, sob, axis=0)
     return sob_array
 
+def sobol_generator_random(nb_samples, k):
+    """
+    Generates m samples (each for one path) each having n numbers in Sobol sequence.
+    
+    INPUT:
+        m (int): number of samples
+        n (int): number of Sobol sequence numbers in each sample
+        
+    OUTPUT:
+        (numpy.ndarray): A two-dimensional array of Sobol sequence numbers for conducting QMC simulation
+    """
+    sob_array = np.empty((0, k))
+    for i in range(nb_samples // 39 + 1):
+        sob = ch.create_sobol_samples(k, 39, i)
+        sob_array = np.append(sob_array, sob, axis=0)
+    sob_array = (sob_array + np.random.uniform(size = (len(sob_array),k))) % 1
+    
+    return sob_array
 
 def multiCIR_QMC(alpha, b, sigma, T, k, S_0, nb_samples):
     
@@ -87,6 +105,24 @@ def multiCIR_QMC(alpha, b, sigma, T, k, S_0, nb_samples):
     multiCIR = []
     
     epsilon_s = stats.norm.ppf(sobol_generator(nb_samples, k+1))
+    
+    for j in range(nb_samples):
+        S = np.zeros(k+1)
+        S[0] = S_0
+            
+        for i in range(1, k+1):
+            dS = alpha * (b - S[i-1]) * dt + sigma * np.sqrt(S[i-1] * dt) * epsilon_s[j, i]
+            S[i] = S[i-1]+ dS
+                
+        multiCIR.append(S)
+    return multiCIR
+
+def multiCIR_QMC_random(alpha, b, sigma, T, k, S_0, nb_samples):
+    
+    dt = T/k
+    multiCIR = []
+    
+    epsilon_s = stats.norm.ppf(sobol_generator_random(nb_samples, k+1))
     
     for j in range(nb_samples):
         S = np.zeros(k+1)

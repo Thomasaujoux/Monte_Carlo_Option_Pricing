@@ -74,11 +74,14 @@ def CPU_QMC(optimal_sample,k, S_0, T, r, sigma, K, alpha, b):
     time = []
     for i in range(100):
         start = timer()
-        present_payoffs = QMC.QMC_mc_sim(optimal_sample,k, S_0, T, r, sigma, K, alpha, b)
+        present_payoffs = QMC.QMC_mc_sim_random(optimal_sample,k, S_0, T, r, sigma, K, alpha, b)
         mean_pv_payoffs = np.mean(present_payoffs)
         end = timer() 
         time.append(end - start) 
     return np.percentile(time, 50) 
+
+
+
 
 def mse_comparaison(max_sample, k, S_0, T, r, sigma, K, alpha, b, mean_pv_payoffs_cvg):
     mse_values = np.zeros(int(max_sample / 10))
@@ -87,9 +90,29 @@ def mse_comparaison(max_sample, k, S_0, T, r, sigma, K, alpha, b, mean_pv_payoff
         estimateur_values = []
         for i in range(300):
             present_payoffs = ordinaryMC.ordinary_mc_sim(nb_samples,k, S_0, T, r, sigma, K, alpha, b) 
-            estimateur_values.append(present_payoffs)
-        comparaison = [mean_pv_payoffs_cvg] * len(present_payoffs)
-        mse_values[int(nb_samples/10) - 1] = mean_squared_error(present_payoffs, comparaison)
+            mean_pv_payoffs = np.mean(present_payoffs)
+            estimateur_values.append(mean_pv_payoffs)
+        comparaison = [mean_pv_payoffs_cvg] * len(estimateur_values)
+        mse_values[int(nb_samples/10) - 1] = mean_squared_error(estimateur_values, comparaison)
+        print(nb_samples)
+    tpm = min(mse_values)
+    tpm_arg = mse_values.argmin()
+    tpm = [mse_values, tpm, tpm_arg]
+    return tpm
+
+
+
+def mse_comparaison_QMC(max_sample, k, S_0, T, r, sigma, K, alpha, b, mean_pv_payoffs_cvg):
+    mse_values = np.zeros(int(max_sample / 10))
+    
+    for nb_samples in range(10, max_sample + 1, 10):
+        estimateur_values = []
+        for i in range(300):
+            present_payoffs = QMC.QMC_mc_sim_random(nb_samples,k, S_0, T, r, sigma, K, alpha, b) 
+            mean_pv_payoffs = np.mean(present_payoffs)
+            estimateur_values.append(mean_pv_payoffs)
+        comparaison = [mean_pv_payoffs_cvg] * len(estimateur_values)
+        mse_values[int(nb_samples/10) - 1] = mean_squared_error(estimateur_values, comparaison)
         print(nb_samples)
     tpm = min(mse_values)
     tpm_arg = mse_values.argmin()
