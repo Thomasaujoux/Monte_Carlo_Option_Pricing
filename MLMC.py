@@ -13,7 +13,7 @@ def h_l(k,T,l):
     
     output : h_l (float)
     """
-    h_l = k**(-l)*T
+    h_l = 4**(-l)*T
     return h_l
 
 def N_l(variance, k, T,l, L, epsilon):
@@ -54,15 +54,6 @@ def level_mc_sim(nb_samples, S_0, T, r, sigma, K, alpha, b, L):
         present_payoffs[i] = ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multiCIR[i], K), r, T)
     return(np.mean(present_payoffs))
 
-def mc_telescopic_sum(alpha, b, sigma, L, T, S_0, nb_samples, r, K): 
-    pv_calc0 = level_mc_sim(nb_samples, S_0, T, r, sigma, K, alpha, b, 0)
-    pv_calc_sum = pv_calc0
-    for l in range(1,L):
-        pv_calc_sum = pv_calc_sum + level_mc_sim(nb_samples, S_0, T, r, sigma, K, alpha, b, l) - level_mc_sim(nb_samples, S_0, T, r, sigma, K, alpha, b, l-1)
-    print("coucou")
-        
-    return pv_calc_sum
-
 def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
     
     #1) start with L=0
@@ -91,8 +82,7 @@ def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
             
         #4)evaluate extra samples at each level as needed for new N_l
             if New > N[l]:
-                Bis_multiCIR_ML = CIR.multiCIR_ML(alpha, b, sigma, L, T, S_0, New-N[l])
-                values = np.concatenate(([mc_telescopic_sum(alpha, b, sigma, L, T, S_0, N[l], r, K) for sample in multiCIR_ML],[mc_telescopic_sum(alpha, b, sigma, L, T, S_0, N[l], r, K) for sample in Bis_multiCIR_ML]))
+                values = np.concatenate(([mc_telescopic_sum(alpha, b, sigma, L, T, S_0, N[l], r, K) for sample in multiCIR_ML],[mc_telescopic_sum(alpha, b, sigma, L, T, S_0, New - N[l], r, K) for sample in Bis_multiCIR_ML]))
                 N[l] = New
                 
                 
@@ -105,3 +95,24 @@ def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
            
     
     return values, L, N
+
+
+def sim_MLMC_Lfixe( S_0, T, r, sigma, K, alpha, b, N,L):
+    means = np.zeros(L)
+    variances = np.zeros(L)
+    list_payoff=[]
+    for l in range(L):
+        multicir=CIR.multiCIR_ML(alpha, b, sigma, l, T, S_0, N)
+        list_payoff_level=[]
+        payoff_for_var=[]
+        
+        for i in range(N):
+            a=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][0][1],K),r,T)
+            b=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][1][1],K),r,T)
+            payoff_for_var.append(a)
+            list_payoff_level.append(a-b)
+        
+        list_payoff.append(list_payoff_level)
+        means[l] = np.mean(list_payoff_level)
+        variances[l]=np.var(payoff_for_var)
+    return means,variances
