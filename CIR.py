@@ -12,7 +12,7 @@ def CIR(alpha, b, sigma, T, k, S_0):
     S = np.zeros(k+1)
     S[0] = S_0
     for i in range(1, k+1):
-        dS = alpha * (b - S[i-1]) * dt + sigma * np.sqrt(S[i-1] * dt) * np.random.normal(scale=np.sqrt(dt))
+        dS = alpha * (b - S[i-1]) * dt + sigma * np.sqrt(S[i-1] ) * np.random.normal(scale=np.sqrt(dt))
         S[i] = S[i-1] + dS
         if S[i] < 0 : S[i] = "Erreur"
     return S
@@ -24,43 +24,41 @@ def multiCIR(alpha, b, sigma, T, k, S_0, nb_samples):
     return multiCIR
 
 
-def CIR_new(alpha, b, sigma, delta, T, S_0):
+    
+def CIR_ML(alpha, b, sigma, L, T, S_0): 
+    delta = 2**(-L)
     k = int(np.ceil(T/delta))
     S = np.zeros(k+1)
     t = np.zeros(k+1)
     S[0] = S_0
     for i in range(1, k+1):
-        dS = alpha * (b - S[i-1]) * delta + sigma * np.sqrt(S[i-1] * delta) * np.random.normal(scale=np.sqrt(delta))
+        dS = alpha * (b - S[i-1]) * delta + sigma * np.sqrt(S[i-1] ) * np.random.normal(scale=np.sqrt(delta))
         S[i] = S[i-1] + dS
         if S[i] < 0 : S[i] = "Erreur"
         t[i] = i*delta
     return t, S
 
 
-def level_CIR(alpha, b, sigma, L, T, S_0): 
-    delta = 2**(-L)
-    return CIR_new(alpha, b, sigma, delta, T, S_0)
+def ML_principle(alpha, b, sigma, L, T, S_0): 
+    ML_CIR = []
+    M = CIR_ML(alpha, b, sigma, L, T, S_0)
+    ML_CIR.append(M)
+    A = ([ML_CIR[0][0][i] for i in range(0,len(ML_CIR[0][0]),2)],[ML_CIR[0][1][i] for i in range(0,len(ML_CIR[0][0]),2)])
+    ML_CIR.append(A)
+           
+    return ML_CIR
 
 
 def multiCIR_ML(alpha, b, sigma, L, T, S_0, nb_samples): 
     multiCIR = []
-    delta = 2**(-L)
     for i in range(nb_samples): 
-        multiCIR.append(level_CIR(alpha, b, sigma, L, T, S_0)) 
+        multiCIR.append(ML_principle(alpha, b, sigma, L, T, S_0))
         print(multiCIR)
     return multiCIR
 
-def multiCIR_ML_principle(alpha, b, sigma, L, T, S_0): 
-    multiCIR = []
-    delta = 2**(-L)
-    M = CIR_new(alpha, b, sigma, delta, T, S_0)
-    multiCIR.append(M)
-    for j in range(L-1): 
-        A = ([multiCIR[j][0][i] for i in range(0,len(multiCIR[j][0]),2)],[multiCIR[j][1][i] for i in range(0,len(multiCIR[j][0]),2)])
-        multiCIR.append(A)
-      
-       
-    return multiCIR
+
+
+
 
 
 def sobol_generator(nb_samples, k):
@@ -111,7 +109,7 @@ def multiCIR_QMC(alpha, b, sigma, T, k, S_0, nb_samples):
         S[0] = S_0
             
         for i in range(1, k+1):
-            dS = alpha * (b - S[i-1]) * dt + sigma * np.sqrt(S[i-1] * dt) * epsilon_s[j, i]
+            dS = alpha * (b - S[i-1]) * dt + sigma * np.sqrt(S[i-1] ) * epsilon_s[j, i]
             S[i] = S[i-1]+ dS
                 
         multiCIR.append(S)
@@ -129,7 +127,7 @@ def multiCIR_QMC_random(alpha, b, sigma, T, k, S_0, nb_samples):
         S[0] = S_0
             
         for i in range(1, k+1):
-            dS = alpha * (b - S[i-1]) * dt + sigma * np.sqrt(S[i-1] * dt) * epsilon_s[j, i]
+            dS = alpha * (b - S[i-1]) * dt + sigma * np.sqrt(S[i-1]) * epsilon_s[j, i]
             S[i] = S[i-1]+ dS
                 
         multiCIR.append(S)
