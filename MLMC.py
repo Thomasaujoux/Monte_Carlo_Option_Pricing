@@ -13,7 +13,7 @@ def h_l(k,T,l):
     
     output : h_l (float)
     """
-    h_l = 4**(-l)*T
+    h_l = 2**(-l)*T
     return h_l
 
 def N_l(variance, k, T,l, L, epsilon):
@@ -21,10 +21,9 @@ def N_l(variance, k, T,l, L, epsilon):
     
     
     sum_vh = 0 
-    for l in range(0,L):
-        sum_vh = sum_vh + np.sqrt(variance[l]/h_l(k,T,l))
-    print(sum_vh)
-    print(2*epsilon**(-2)*np.sqrt(variance[l]*h_l(k,T,l))*sum_vh)
+    for level in range(0,L+1):
+        sum_vh = sum_vh + np.sqrt(variance[level]/h_l(k,T,l))
+    
     N_l = int(np.ceil(2*epsilon**(-2)*np.sqrt(variance[l]*h_l(k,T,l))*sum_vh))
                       
     return N_l
@@ -57,62 +56,116 @@ def level_mc_sim(nb_samples, S_0, T, r, sigma, K, alpha, b, L):
 def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
     
     #1) start with L=0
-    L = 0 
+    L = 0
     N = []
-    epsilon = np.exp(-1) #fixé de cette façon dans le papier
+    epsilon = 10**(-3) #fixé de cette façon dans le papier
     convergence = False
+    y_chap=0
+    values=[]
+    # Initialize arrays for sample means and variances
+    
+
     
     while convergence==False or L < 2:
-        # Initialize arrays for sample means and variances
-        means = np.zeros(L+1)
-        variances = np.zeros(L+1)
-        for l in range(L+1):
+
+        N.append(100)
             
-            N.append(100)
-            multiCIR_ML = CIR.multiCIR_ML(alpha, b, sigma, L, T, S_0, N[l])
-            values = np.array([mc_telescopic_sum(alpha, b, sigma, L, T, S_0, N[l], r, K) for sample in multiCIR_ML])
+        # Compute the sample mean and variance at each level
+        values.append(sim_MLMC_Lfixe( S_0, T, r, sigma, K, alpha, b, N[L],L))
         
-            # Compute the sample mean and variance at each level
-            means[l] = np.mean(values)
-            variances[l] = np.var(values) #2) estimate VL using an initial N_L = 10**4 samples
-            print(variances)
+        for l in range(L+1):
+            means = np.zeros(L+1)
+            variances = np.zeros(L+1)
+            means[l]=np.mean(values[l])
+            variances[l] = np.var(values[l]) #2) estimate VL using an initial N_L = 10**4 samples
+            
             
             #3) define optimal N_l, l = 0,...,L using Eqn. (12)
             New = N_l(variances, k, T, l, L, epsilon)
-            
+            print(New)
+            print(N[l])
         #4)evaluate extra samples at each level as needed for new N_l
             if New > N[l]:
-                values = np.concatenate(([mc_telescopic_sum(alpha, b, sigma, L, T, S_0, N[l], r, K) for sample in multiCIR_ML],[mc_telescopic_sum(alpha, b, sigma, L, T, S_0, New - N[l], r, K) for sample in Bis_multiCIR_ML]))
+                print("yo")
+                values[l] = values[l]+sim_MLMC_Lfixe( S_0, T, r, sigma, K, alpha, b, New - N[l],l)
                 N[l] = New
-                
-                
-            if np.abs(means[L] - k**(-1)*means[L-1]) < 1/np.sqrt(2)*((k**2)-1)**epsilon:
+
+        if L>=2:
+            if np.abs(means[L] - 2**(-1)*means[L-1]) < 1/np.sqrt(2)*((2**2)-1)*epsilon:
+                print("conv")
                 convergence=True
                 
-            else :
+            else:
+                print("coucou")
                 L = L+1
                 print(L)
+        else: 
+            print("L trop petit")
+            L = L+1
            
     
-    return values, L, N
+    return  L, N, variances, means
 
 
 def sim_MLMC_Lfixe( S_0, T, r, sigma, K, alpha, b, N,L):
-    means = np.zeros(L)
-    variances = np.zeros(L)
-    list_payoff=[]
-    for l in range(L):
-        multicir=CIR.multiCIR_ML(alpha, b, sigma, l, T, S_0, N)
-        list_payoff_level=[]
-        payoff_for_var=[]
-        
+
+    if L==0 :
+        payoff_level=[]
+        multicir=CIR.multiCIR_ML(alpha, b, sigma, L, T, S_0, N)
+        for i in range(N):
+            a=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][1],K),r,T)
+            payoff_level.append(a)
+       
+
+    else:
+          
+        multicir=CIR.multiCIR_ML(alpha, b, sigma, L, T, S_0, N)
+
+        payoff_level=[]
+            
+            
         for i in range(N):
             a=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][0][1],K),r,T)
             b=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][1][1],K),r,T)
+            payoff_level.append(a-b)
+
+
+    return payoff_level
+               
+
+
+def sim_MLMC_Lfixe_bon( S_0, T, r, sigma, K, alpha, b, N,L):
+    means = np.zeros(L)
+    variances = np.zeros(L)
+    list_payoff=[]
+
+    if L==0 :
+        payoff_for_var=[]
+        multicir=CIR.multiCIR_ML(alpha, b, sigma, L, T, S_0, N)
+        for i in range(N):
+            a=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][1],K),r,T)
             payoff_for_var.append(a)
-            list_payoff_level.append(a-b)
-        
-        list_payoff.append(list_payoff_level)
-        means[l] = np.mean(list_payoff_level)
-        variances[l]=np.var(payoff_for_var)
-    return means,variances
+        means[L] = np.mean(payoff_for_var)
+        variances[L]=np.var(payoff_for_var)
+
+    else:
+
+        for l in range(L):
+            multicir=CIR.multiCIR_ML(alpha, b, sigma, l, T, S_0, N)
+            list_payoff_level=[]
+            payoff_for_var=[]
+            
+            for i in range(N):
+                a=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][0][1],K),r,T)
+                b=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][1][1],K),r,T)
+                payoff_for_var.append(a)
+                list_payoff_level.append(a-b)
+            
+            list_payoff.append(list_payoff_level)
+            means[l] = np.mean(list_payoff_level)
+            variances[l]=np.var(payoff_for_var)
+        return means,variances
+                
+            
+
+    

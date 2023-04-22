@@ -51,8 +51,15 @@ def ML_principle(alpha, b, sigma, L, T, S_0):
 
 def multiCIR_ML(alpha, b, sigma, L, T, S_0, nb_samples): 
     multiCIR = []
-    for i in range(nb_samples): 
-        multiCIR.append(ML_principle(alpha, b, sigma, L, T, S_0))
+    
+    if L==0 :
+        for i in range(nb_samples): 
+            multiCIR.append(CIR_ML(alpha, b, sigma, L, T, S_0))
+
+    else :
+        for i in range(nb_samples): 
+            multiCIR.append(ML_principle(alpha, b, sigma, L, T, S_0))
+    
     return multiCIR
 
 
