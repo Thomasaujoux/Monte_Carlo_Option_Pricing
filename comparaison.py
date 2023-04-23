@@ -64,6 +64,7 @@ def threshold_finder(CI, tol):
         return None
     
 
+
 def CI_length_calc(CI):
     """
     Calculates length of a confidence interval.
@@ -88,6 +89,7 @@ def CPU(optimal_sample,k, S_0, T, r, sigma, K, alpha, b, *,method):
 
     if method == 'ordinary':
         for i in range(15):
+            print(i)
             start = timer()
             present_payoffs = ordinaryMC.ordinary_mc_sim(optimal_sample,k, S_0, T, r, sigma, K, alpha, b)
             mean_pv_payoffs = np.mean(present_payoffs)
@@ -96,6 +98,7 @@ def CPU(optimal_sample,k, S_0, T, r, sigma, K, alpha, b, *,method):
 
     elif method == 'QMC':
         for i in range(15):
+            print(i)
             start = timer()
             present_payoffs = QMC.QMC_mc_sim(optimal_sample, k, S_0, T, r, sigma, K, alpha, b)
             mean_pv_payoffs = np.mean(present_payoffs)
@@ -104,6 +107,7 @@ def CPU(optimal_sample,k, S_0, T, r, sigma, K, alpha, b, *,method):
 
     elif method == 'QMC_random':
         for i in range(15):
+            print(i)
             start = timer()
             present_payoffs = QMC.QMC_mc_sim_random(optimal_sample, k, S_0, T, r, sigma, K, alpha, b)
             mean_pv_payoffs = np.mean(present_payoffs)
@@ -122,7 +126,7 @@ def CPU(optimal_sample,k, S_0, T, r, sigma, K, alpha, b, *,method):
 
 
 
-def CPU_comparaison(max_sample, k, S_0, T, r, sigma, K, alpha, b, *,method):
+def CPU_comparaison(min_sample, max_sample, temps_comparaison, k, S_0, T, r, sigma, K, alpha, b, *,method):
     """
     Iterates simulation with different sample sizes (form 10 to a maximum size with steps of 10)
     
@@ -148,16 +152,24 @@ def CPU_comparaison(max_sample, k, S_0, T, r, sigma, K, alpha, b, *,method):
     CPU_times = np.zeros(int(max_sample / 10))
 
     if method == 'ordinary':
-        for nb_samples in range(10, max_sample + 1, 10):
+        for nb_samples in range(min_sample, max_sample + 1, 10):
             CPU2 = CPU(nb_samples,k, S_0, T, r, sigma, K, alpha, b, method='ordinary')
             CPU_times[int(nb_samples/10 - 1)] = CPU2
+            if CPU2 > temps_comparaison:
+                return([CPU_times, CPU2, nb_samples * 10])
+            else :
+                return("Pas dans cet intervalle")
 
     elif method == 'QMC_random':
-        for nb_samples in range(10, max_sample + 1, 10):
+        for nb_samples in range(min_sample, max_sample + 1, 10):
             CPU2 = CPU(nb_samples,k, S_0, T, r, sigma, K, alpha, b, method='QMC_random')
             CPU_times[int(nb_samples/10 - 1)] = CPU2
+            if CPU2 > temps_comparaison:
+                return([CPU_times, CPU2, nb_samples * 10])
+            else :
+                return("Pas dans cet intervalle")
+            
 
-    return CPU_times
 
 
 def mse_time(nb_samples, k, S_0, T, r, sigma, K, alpha, b, mean_pv_payoffs_cvg, *,method):
