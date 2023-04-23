@@ -31,6 +31,7 @@ def ML_principle(alpha, b, sigma, L, T, S_0):
     return ML_CIR
 
 
+
 def multiCIR_ML(alpha, b, sigma, L, T, S_0, nb_samples): 
     multiCIR = []
     
@@ -43,6 +44,7 @@ def multiCIR_ML(alpha, b, sigma, L, T, S_0, nb_samples):
             multiCIR.append(ML_principle(alpha, b, sigma, L, T, S_0))
     
     return multiCIR
+
 
 
 def h_l(T,l):
@@ -58,9 +60,9 @@ def h_l(T,l):
     h_l = 2**(-l)*T
     return h_l
 
+
+
 def N_l(variance, k, T,l, L, epsilon):
-    
-    
     
     sum_vh = 0 
     for level in range(0,L+1):
@@ -69,6 +71,8 @@ def N_l(variance, k, T,l, L, epsilon):
     N_l = int(np.ceil(2*epsilon**(-2)*np.sqrt(variance[l]*h_l(T,l))*sum_vh))
                       
     return N_l
+
+
 
 def level_mc_sim(nb_samples, S_0, T, r, sigma, K, alpha, b, L):
     """
@@ -95,7 +99,9 @@ def level_mc_sim(nb_samples, S_0, T, r, sigma, K, alpha, b, L):
         present_payoffs[i] = calcul.pv_calc(calcul.payoff_calc(multiCIR[i], K), r, T)
     return(np.mean(present_payoffs))
 
-def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
+
+
+def ML_mc_sim(k, S_0, T, r, sigma, K, alpha, b):
     
     #1) start with L=0
     L = 0
@@ -106,7 +112,6 @@ def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
     values=[]
     # Initialize arrays for sample means and variances
     
-
     while convergence==False or L < 2:
 
         N.append(100)
@@ -144,6 +149,7 @@ def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
     return  y_chap, L, N, variances, means
 
 
+
 def sim_MLMC_Lfixe( S_0, T, r, sigma, K, alpha, b, N,L):
 
     if L==0 :
@@ -165,8 +171,8 @@ def sim_MLMC_Lfixe( S_0, T, r, sigma, K, alpha, b, N,L):
             b=calcul.pv_calc(calcul.payoff_calc(multicir[i][1][1],K),r,T)
             payoff_level.append(a-b)
 
-
     return payoff_level
+
                
 
 
@@ -201,6 +207,10 @@ def sim_MLMC_Lfixe_bon( S_0, T, r, sigma, K, alpha, b, N,L):
             means[l] = np.mean(list_payoff_level)
             variances[l]=np.var(payoff_for_var)
         return means,variances
+                
+
+
+
                 
             
 

@@ -82,12 +82,12 @@ def CI_length_calc(CI):
 
 def CPU(optimal_sample,k, S_0, T, r, sigma, K, alpha, b, *,method):
 
-    assert(method in ['ordinary', 'QMC', 'QMC_random'])
+    assert(method in ['ordinary', 'QMC', 'QMC_random', 'MLMC'])
 
     time = []
 
     if method == 'ordinary':
-        for i in range(100):
+        for i in range(15):
             start = timer()
             present_payoffs = ordinaryMC.ordinary_mc_sim(optimal_sample,k, S_0, T, r, sigma, K, alpha, b)
             mean_pv_payoffs = np.mean(present_payoffs)
@@ -95,7 +95,7 @@ def CPU(optimal_sample,k, S_0, T, r, sigma, K, alpha, b, *,method):
             time.append(end - start) 
 
     elif method == 'QMC':
-        for i in range(100):
+        for i in range(15):
             start = timer()
             present_payoffs = QMC.QMC_mc_sim(optimal_sample, k, S_0, T, r, sigma, K, alpha, b)
             mean_pv_payoffs = np.mean(present_payoffs)
@@ -103,15 +103,103 @@ def CPU(optimal_sample,k, S_0, T, r, sigma, K, alpha, b, *,method):
             time.append(end - start) 
 
     elif method == 'QMC_random':
-        for i in range(100):
+        for i in range(15):
             start = timer()
             present_payoffs = QMC.QMC_mc_sim_random(optimal_sample, k, S_0, T, r, sigma, K, alpha, b)
             mean_pv_payoffs = np.mean(present_payoffs)
             end = timer() 
             time.append(end - start) 
 
+    elif method == 'MLMC':
+        for i in range(15):
+            print(i)
+            start = timer()
+            present_payoffs = MLMC.ML_mc_sim(k, S_0, T, r, sigma, K, alpha, b)
+            end = timer() 
+            time.append(end - start) 
+
     return np.percentile(time, 50) 
 
+
+
+def CPU_comparaison(max_sample, k, S_0, T, r, sigma, K, alpha, b, *,method):
+    """
+    Iterates simulation with different sample sizes (form 10 to a maximum size with steps of 10)
+    
+    INPUT:
+        max_sample (int): Maximum sample size for the iteration of simulations
+        k (int): Number of price step we aim to simulate in each path
+        S_0 (float): Underlying asset price at time zero
+        T (float): Time period of option contract
+        r (float): Risk-netural interest rate
+        sigma (float): Volatility in the environment
+        x_price (float): Exercise price of the option
+        K (float): Exercise price of the option
+        alpha (float): taux de convergence
+        b (float): taux de convergence
+    
+    OUTPUT:
+        (numpy.ndarray): confidence intervals of the simulations #pas encore intégré
+        (numpy.ndarray): price estimations of the simulations
+    """
+    
+    assert(method in ['ordinary', 'QMC', 'QMC_random','MLMC'])
+
+    CPU_times = np.zeros(int(max_sample / 10))
+
+    if method == 'ordinary':
+        for nb_samples in range(10, max_sample + 1, 10):
+            CPU2 = CPU(nb_samples,k, S_0, T, r, sigma, K, alpha, b, method='ordinary')
+            CPU_times[int(nb_samples/10 - 1)] = CPU2
+
+    elif method == 'QMC_random':
+        for nb_samples in range(10, max_sample + 1, 10):
+            CPU2 = CPU(nb_samples,k, S_0, T, r, sigma, K, alpha, b, method='QMC_random')
+            CPU_times[int(nb_samples/10 - 1)] = CPU2
+
+    return CPU_times
+
+
+def mse_time(nb_samples, k, S_0, T, r, sigma, K, alpha, b, mean_pv_payoffs_cvg, *,method):
+
+    assert(method in ['ordinary', 'QMC', 'QMC_random', 'MLMC'])
+
+    if method == 'ordinary':
+        estimateur_values = []
+        for i in range(20):
+            present_payoffs = ordinaryMC.ordinary_mc_sim(nb_samples,k, S_0, T, r, sigma, K, alpha, b) 
+            mean_pv_payoffs = np.mean(present_payoffs)
+            estimateur_values.append(mean_pv_payoffs)
+        comparaison = [mean_pv_payoffs_cvg] * len(estimateur_values)
+        mse = mean_squared_error(estimateur_values, comparaison)
+
+    elif method == 'QMC':
+        estimateur_values = []
+        for i in range(20):
+            present_payoffs = QMC.QMC_mc_sim(nb_samples,k, S_0, T, r, sigma, K, alpha, b) 
+            mean_pv_payoffs = np.mean(present_payoffs)
+            estimateur_values.append(mean_pv_payoffs)
+        comparaison = [mean_pv_payoffs_cvg] * len(estimateur_values)
+        mse = mean_squared_error(estimateur_values, comparaison)
+
+    elif method == 'QMC_random':
+        estimateur_values = []
+        for i in range(20):
+            present_payoffs = QMC.QMC_mc_sim_random(nb_samples,k, S_0, T, r, sigma, K, alpha, b) 
+            mean_pv_payoffs = np.mean(present_payoffs)
+            estimateur_values.append(mean_pv_payoffs)
+        comparaison = [mean_pv_payoffs_cvg] * len(estimateur_values)
+        mse = mean_squared_error(estimateur_values, comparaison)
+
+    elif method == 'MLMC':
+        estimateur_values = []
+        for i in range(20):
+            present_payoffs = MLMC.ML_mc_sim(k, S_0, T, r, sigma, K, alpha, b)[0]
+            estimateur_values.append(present_payoffs)
+        comparaison = [mean_pv_payoffs_cvg] * len(estimateur_values)
+        mse = mean_squared_error(estimateur_values, comparaison)
+
+    return mse
 
 
 
@@ -149,6 +237,16 @@ def mse_comparaison(max_sample, k, S_0, T, r, sigma, K, alpha, b, mean_pv_payoff
             for i in range(300):
                 present_payoffs = QMC.QMC_mc_sim_random(nb_samples,k, S_0, T, r, sigma, K, alpha, b) 
                 mean_pv_payoffs = np.mean(present_payoffs)
+                estimateur_values.append(mean_pv_payoffs)
+            comparaison = [mean_pv_payoffs_cvg] * len(estimateur_values)
+            mse_values[int(nb_samples/10) - 1] = mean_squared_error(estimateur_values, comparaison)
+            print(nb_samples)
+
+    elif method == 'MLMC':
+        for nb_samples in range(10, max_sample + 1, 10):
+            estimateur_values = []
+            for i in range(300):
+                present_payoffs = MLMC.ML_mc_sim(k, S_0, T, r, sigma, K, alpha, b)
                 estimateur_values.append(mean_pv_payoffs)
             comparaison = [mean_pv_payoffs_cvg] * len(estimateur_values)
             mse_values[int(nb_samples/10) - 1] = mean_squared_error(estimateur_values, comparaison)

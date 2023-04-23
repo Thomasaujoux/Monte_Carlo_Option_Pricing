@@ -60,7 +60,7 @@ def sim_iterator(max_sample, k, S_0, T, r, sigma, K, alpha, b, *,method):
         (numpy.ndarray): price estimations of the simulations
     """
     
-    assert(method in ['ordinary', 'QMC', 'QMC_random'])
+    assert(method in ['ordinary', 'QMC', 'QMC_random','MLMC'])
 
     mean_pv_payoffs = np.zeros(int(max_sample / 10))
     confidence_intervals = np.array([None, None])
@@ -82,6 +82,5 @@ def sim_iterator(max_sample, k, S_0, T, r, sigma, K, alpha, b, *,method):
             present_payoffs = QMC.QMC_mc_sim_random(nb_samples, k, S_0, T, r, sigma, K, alpha, b)
             mean_pv_payoffs[int(nb_samples/10 - 1)] = np.mean(present_payoffs)
             confidence_intervals = np.row_stack((confidence_intervals, comparaison.CI_calc(present_payoffs)))
-
 
     return(mean_pv_payoffs, confidence_intervals)
