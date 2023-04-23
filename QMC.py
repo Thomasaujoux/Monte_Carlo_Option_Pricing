@@ -1,10 +1,86 @@
 import numpy as np
+import chaospy as ch
 from scipy import stats
-import matplotlib.pyplot as plt
-import CIR
-import ordinaryMC
-import comparaison
+from scipy.stats import qmc
 
+import calcul
+
+
+def sobol_generator(nb_samples, k):
+    """
+    Generates m samples (each for one path) each having n numbers in Sobol sequence.
+    
+    INPUT:
+        m (int): number of samples
+        n (int): number of Sobol sequence numbers in each sample
+        
+    OUTPUT:
+        (numpy.ndarray): A two-dimensional array of Sobol sequence numbers for conducting QMC simulation
+    """
+    sob_array = np.empty((0, k))
+    for i in range(nb_samples // 39 + 1):
+        sob = ch.create_sobol_samples(k, 39, i)
+        sob_array = np.append(sob_array, sob, axis=0)
+    return sob_array
+
+
+
+def sobol_generator_random(nb_samples, k):
+    """
+    Generates m samples (each for one path) each having n numbers in Sobol sequence.
+    
+    INPUT:
+        m (int): number of samples
+        n (int): number of Sobol sequence numbers in each sample
+        
+    OUTPUT:
+        (numpy.ndarray): A two-dimensional array of Sobol sequence numbers for conducting QMC simulation
+    """
+    sob_array = []
+    for i in range(nb_samples):
+        sampler = qmc.Sobol(d=1, scramble=True) 
+        sob = sampler.random_base2(m=5)
+        sob = sob.reshape(1,32)
+        sob_array.append(sob[0][0:21])
+    return sob_array
+
+
+def multiCIR_QMC(alpha, b, sigma, T, k, S_0, nb_samples):
+    
+    dt = T/k
+    multiCIR = []
+    
+    epsilon_s = stats.norm.ppf(sobol_generator(nb_samples, k+1), scale=np.sqrt(dt))
+    
+    for j in range(nb_samples):
+        S = np.zeros(k+1)
+        S[0] = S_0
+            
+        for i in range(1, k+1):
+            dS = alpha * (b - S[i-1]) * dt + sigma * np.sqrt(S[i-1] ) * epsilon_s[j, i]
+            S[i] = S[i-1]+ dS
+                
+        multiCIR.append(S)
+    return multiCIR
+
+
+def multiCIR_QMC_random(alpha, b, sigma, T, k, S_0, nb_samples):
+    
+    dt = T/k
+    multiCIR = []
+    
+    epsilon_s = stats.norm.ppf(sobol_generator_random(nb_samples, k+1), scale=np.sqrt(dt))
+    
+    for j in range(nb_samples):
+        S = np.zeros(k+1)
+        S[0] = S_0
+            
+        for i in range(1, k+1):
+            dS = alpha * (b - S[i-1]) * dt + sigma * np.sqrt(S[i-1]) * epsilon_s[j, i]
+            S[i] = S[i-1]+ dS
+                
+        multiCIR.append(S)
+    return multiCIR
 
 
 def QMC_mc_sim(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
@@ -26,10 +102,10 @@ def QMC_mc_sim(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
         (Numpy.ndarray): A one-dimensional array of present value of simulated payoffs
     """
     present_payoffs = np.zeros(nb_samples)
-    multiCIR_QMC = CIR.multiCIR_QMC(alpha, b, sigma, T, k, S_0, nb_samples)
+    multiCIR_QMC2 = multiCIR_QMC(alpha, b, sigma, T, k, S_0, nb_samples)
     
     for i in range(nb_samples):
-        present_payoffs[i] = ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multiCIR_QMC[i], K), r, T)
+        present_payoffs[i] = calcul.pv_calc(calcul.payoff_calc(multiCIR_QMC2[i], K), r, T)
     return(present_payoffs)
 
 def QMC_mc_sim_random(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
@@ -51,74 +127,9 @@ def QMC_mc_sim_random(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
         (Numpy.ndarray): A one-dimensional array of present value of simulated payoffs
     """
     present_payoffs = np.zeros(nb_samples)
-    multiCIR_QMC = CIR.multiCIR_QMC_random(alpha, b, sigma, T, k, S_0, nb_samples)
+    multiCIR_QMC_random2 = multiCIR_QMC_random(alpha, b, sigma, T, k, S_0, nb_samples)
     
     for i in range(nb_samples):
-        present_payoffs[i] = ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multiCIR_QMC[i], K), r, T)
+        present_payoffs[i] = calcul.pv_calc(calcul.payoff_calc(multiCIR_QMC_random2[i], K), r, T)
     return(present_payoffs)
 
-
-def sim_iterator_QMC(max_sample, k, S_0, T, r, sigma, K, alpha, b):
-    """
-    Iterates simulation with different sample sizes (form 10 to a maximum size with steps of 10)
-    
-    INPUT:
-        max_sample (int): Maximum sample size for the iteration of simulations
-        k (int): Number of price step we aim to simulate in each path
-        S_0 (float): Underlying asset price at time zero
-        T (float): Time period of option contract
-        r (float): Risk-netural interest rate
-        sigma (float): Volatility in the environment
-        x_price (float): Exercise price of the option
-        K (float): Exercise price of the option
-        alpha (float): taux de convergence
-        b (float): taux de convergence
-    
-    OUTPUT:
-        (numpy.ndarray): confidence intervals of the simulations #pas encore intégré
-        (numpy.ndarray): price estimations of the simulations
-    """
-    
-    mean_pv_payoffs = np.zeros(int(max_sample / 10))
-    confidence_intervals = np.array([None, None])
-
-
-    for nb_samples in range(10, max_sample + 1, 10):
-        present_payoffs = QMC_mc_sim(nb_samples,k, S_0, T, r, sigma, K, alpha, b)
-        mean_pv_payoffs[int(nb_samples/10) - 1] = np.mean(present_payoffs)
-        confidence_intervals = np.row_stack((confidence_intervals, comparaison.CI_calc(present_payoffs)))
-
-    return(mean_pv_payoffs, confidence_intervals)
-
-
-def sim_iterator_QMC_random(max_sample, k, S_0, T, r, sigma, K, alpha, b):
-    """
-    Iterates simulation with different sample sizes (form 10 to a maximum size with steps of 10)
-    
-    INPUT:
-        max_sample (int): Maximum sample size for the iteration of simulations
-        k (int): Number of price step we aim to simulate in each path
-        S_0 (float): Underlying asset price at time zero
-        T (float): Time period of option contract
-        r (float): Risk-netural interest rate
-        sigma (float): Volatility in the environment
-        x_price (float): Exercise price of the option
-        K (float): Exercise price of the option
-        alpha (float): taux de convergence
-        b (float): taux de convergence
-    
-    OUTPUT:
-        (numpy.ndarray): confidence intervals of the simulations #pas encore intégré
-        (numpy.ndarray): price estimations of the simulations
-    """
-    
-    mean_pv_payoffs = np.zeros(int(max_sample / 10))
-    confidence_intervals = np.array([None, None])
-
-
-    for nb_samples in range(10, max_sample + 1, 10):
-        present_payoffs = QMC_mc_sim_random(nb_samples,k, S_0, T, r, sigma, K, alpha, b)
-        mean_pv_payoffs[int(nb_samples/10) - 1] = np.mean(present_payoffs)
-        confidence_intervals = np.row_stack((confidence_intervals, comparaison.CI_calc(present_payoffs)))
-
-    return(mean_pv_payoffs, confidence_intervals)

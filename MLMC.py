@@ -1,6 +1,48 @@
-import CIR
-import ordinaryMC
+from scipy.stats import norm
+from scipy.optimize import minimize
 import numpy as np
+
+import calcul
+
+
+
+def CIR_ML(alpha, b, sigma, L, T, S_0): 
+    delta = 2**(-L)
+    k = int(np.ceil(T/delta))
+    S = np.zeros(k+1)
+    t = np.zeros(k+1)
+    S[0] = S_0
+    for i in range(1, k+1):
+        dS = alpha * (b - S[i-1]) * delta + sigma * np.sqrt(S[i-1] ) * np.random.normal(scale=np.sqrt(delta))
+        S[i] = S[i-1] + dS
+        if S[i] < 0 : S[i] = "Erreur"
+        t[i] = i*delta
+    return t, S
+
+
+
+def ML_principle(alpha, b, sigma, L, T, S_0): 
+    ML_CIR = []
+    M = CIR_ML(alpha, b, sigma, L, T, S_0)
+    ML_CIR.append(M)
+    A = ([ML_CIR[0][0][i] for i in range(0,len(ML_CIR[0][0]),2)],[ML_CIR[0][1][i] for i in range(0,len(ML_CIR[0][0]),2)])
+    ML_CIR.append(A)
+           
+    return ML_CIR
+
+
+def multiCIR_ML(alpha, b, sigma, L, T, S_0, nb_samples): 
+    multiCIR = []
+    
+    if L==0 :
+        for i in range(nb_samples): 
+            multiCIR.append(CIR_ML(alpha, b, sigma, L, T, S_0))
+
+    else :
+        for i in range(nb_samples): 
+            multiCIR.append(ML_principle(alpha, b, sigma, L, T, S_0))
+    
+    return multiCIR
 
 
 def h_l(T,l):
@@ -47,10 +89,10 @@ def level_mc_sim(nb_samples, S_0, T, r, sigma, K, alpha, b, L):
         (Numpy.ndarray): A one-dimensional array of present value of simulated payoffs
     """
     present_payoffs = np.zeros(nb_samples)
-    multiCIR = CIR.multiCIR_ML(alpha, b, sigma, L, T, S_0, nb_samples)
+    multiCIR = multiCIR_ML(alpha, b, sigma, L, T, S_0, nb_samples)
     
     for i in range(nb_samples):
-        present_payoffs[i] = ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multiCIR[i], K), r, T)
+        present_payoffs[i] = calcul.pv_calc(calcul.payoff_calc(multiCIR[i], K), r, T)
     return(np.mean(present_payoffs))
 
 def sim_MLMC(k, S_0, T, r, sigma, K, alpha, b):
@@ -106,21 +148,21 @@ def sim_MLMC_Lfixe( S_0, T, r, sigma, K, alpha, b, N,L):
 
     if L==0 :
         payoff_level=[]
-        multicir=CIR.multiCIR_ML(alpha, b, sigma, L, T, S_0, N)
+        multicir=multiCIR_ML(alpha, b, sigma, L, T, S_0, N)
         for i in range(N):
-            a=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][1],K),r,T)
+            a=calcul.pv_calc(calcul.payoff_calc(multicir[i][1],K),r,T)
             payoff_level.append(a)
        
     else:
           
-        multicir=CIR.multiCIR_ML(alpha, b, sigma, L, T, S_0, N)
+        multicir=multiCIR_ML(alpha, b, sigma, L, T, S_0, N)
 
         payoff_level=[]
             
             
         for i in range(N):
-            a=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][0][1],K),r,T)
-            b=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][1][1],K),r,T)
+            a=calcul.pv_calc(calcul.payoff_calc(multicir[i][0][1],K),r,T)
+            b=calcul.pv_calc(calcul.payoff_calc(multicir[i][1][1],K),r,T)
             payoff_level.append(a-b)
 
 
@@ -135,9 +177,9 @@ def sim_MLMC_Lfixe_bon( S_0, T, r, sigma, K, alpha, b, N,L):
 
     if L==0 :
         payoff_for_var=[]
-        multicir=CIR.multiCIR_ML(alpha, b, sigma, L, T, S_0, N)
+        multicir=multiCIR_ML(alpha, b, sigma, L, T, S_0, N)
         for i in range(N):
-            a=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][1],K),r,T)
+            a=calcul.pv_calc(calcul.payoff_calc(multicir[i][1],K),r,T)
             payoff_for_var.append(a)
         means[L] = np.mean(payoff_for_var)
         variances[L]=np.var(payoff_for_var)
@@ -145,13 +187,13 @@ def sim_MLMC_Lfixe_bon( S_0, T, r, sigma, K, alpha, b, N,L):
     else:
 
         for l in range(L):
-            multicir=CIR.multiCIR_ML(alpha, b, sigma, l, T, S_0, N)
+            multicir=multiCIR_ML(alpha, b, sigma, l, T, S_0, N)
             list_payoff_level=[]
             payoff_for_var=[]
             
             for i in range(N):
-                a=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][0][1],K),r,T)
-                b=ordinaryMC.pv_calc(ordinaryMC.payoff_calc(multicir[i][1][1],K),r,T)
+                a=calcul.pv_calc(calcul.payoff_calc(multicir[i][0][1],K),r,T)
+                b=calcul.pv_calc(calcul.payoff_calc(multicir[i][1][1],K),r,T)
                 payoff_for_var.append(a)
                 list_payoff_level.append(a-b)
             
