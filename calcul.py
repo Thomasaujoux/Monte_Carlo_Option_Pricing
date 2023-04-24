@@ -83,4 +83,5 @@ def sim_iterator(max_sample, k, S_0, T, r, sigma, K, alpha, b, *,method):
             mean_pv_payoffs[int(nb_samples/10 - 1)] = np.mean(present_payoffs)
             confidence_intervals = np.row_stack((confidence_intervals, comparaison.CI_calc(present_payoffs)))
 
+
     return(mean_pv_payoffs, confidence_intervals)

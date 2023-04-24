@@ -7,6 +7,10 @@ import calcul
 
 
 def CIR_ML(alpha, b, sigma, L, T, S_0): 
+    '''
+    Création du CIR multi level
+    '''
+
     delta = 2**(-L)
     k = int(np.ceil(T/delta))
     S = np.zeros(k+1)
@@ -22,6 +26,10 @@ def CIR_ML(alpha, b, sigma, L, T, S_0):
 
 
 def ML_principle(alpha, b, sigma, L, T, S_0): 
+    '''
+    Cette fonction permet de ne prendre qu'un point sur deux entre le level l-1 et le level L
+    '''
+
     ML_CIR = []
     M = CIR_ML(alpha, b, sigma, L, T, S_0)
     ML_CIR.append(M)
@@ -33,6 +41,11 @@ def ML_principle(alpha, b, sigma, L, T, S_0):
 
 
 def multiCIR_ML(alpha, b, sigma, L, T, S_0, nb_samples): 
+
+    '''
+    Construction du CIR pour tous les échantillons pour un level fixé
+    '''
+
     multiCIR = []
     
     if L==0 :
@@ -63,6 +76,11 @@ def h_l(T,l):
 
 
 def N_l(variance, k, T,l, L, epsilon):
+
+    '''
+    Calcul de N_l
+
+    '''
     
     sum_vh = 0 
     for level in range(0,L+1):
@@ -76,13 +94,13 @@ def N_l(variance, k, T,l, L, epsilon):
 
 def level_mc_sim(nb_samples, S_0, T, r, sigma, K, alpha, b, L):
     """
-    Conducts MC simulation,
+    Simulation du multi level Monte Carlo pour calculer l'option pricing
     
     INPUT:
-        nb_samples (int): Number of samples in simulation
-        k (int): Number of price step we aim to simulate in each path
-        S_0 (float): Underlying asset price at time zero
-        T (float): Time period of option contract
+        nb_samples (int): Nombre d'échantillon
+        k (int): Nombre de price step 
+        S_0 (float): Asset price au temps 0
+        T (float): option contract
         r (float): Risk-netural interest rate
         sigma (float): Volatility in the environment
         K (float): Exercise price of the option
@@ -90,7 +108,7 @@ def level_mc_sim(nb_samples, S_0, T, r, sigma, K, alpha, b, L):
         b (float): taux de convergence
         
     OUTPUT:
-        (Numpy.ndarray): A one-dimensional array of present value of simulated payoffs
+        (Numpy.ndarray): tableau des present values des payoffs simulés
     """
     present_payoffs = np.zeros(nb_samples)
     multiCIR = multiCIR_ML(alpha, b, sigma, L, T, S_0, nb_samples)
@@ -102,6 +120,18 @@ def level_mc_sim(nb_samples, S_0, T, r, sigma, K, alpha, b, L):
 
 
 def ML_mc_sim(k, S_0, T, r, sigma, K, alpha, b):
+
+    '''
+    Création de l'algorithme inspiré du papier Giles pour retourner les N_l et le L optimal
+
+    OUTPUT:
+        y_chap : estimateur optimal de l'option pricing
+        L : nombre de level optimal
+        N : tableau des échantillons optimaux pour chaque niveau
+        variances : variances à chaqeu level
+        mean : moyenne à chaque level
+
+    '''
     
     #1) start with L=0
     L = 0
@@ -151,6 +181,11 @@ def ML_mc_sim(k, S_0, T, r, sigma, K, alpha, b):
 
 
 def sim_MLMC_Lfixe( S_0, T, r, sigma, K, alpha, b, N,L):
+    
+    '''
+    Simulation du multi level Monte Carlo pour un level fixé
+    '''
+
 
     if L==0 :
         payoff_level=[]
@@ -174,44 +209,3 @@ def sim_MLMC_Lfixe( S_0, T, r, sigma, K, alpha, b, N,L):
     return payoff_level
 
                
-
-
-def sim_MLMC_Lfixe_bon( S_0, T, r, sigma, K, alpha, b, N,L):
-    means = np.zeros(L)
-    variances = np.zeros(L)
-    list_payoff=[]
-
-    if L==0 :
-        payoff_for_var=[]
-        multicir=multiCIR_ML(alpha, b, sigma, L, T, S_0, N)
-        for i in range(N):
-            a=calcul.pv_calc(calcul.payoff_calc(multicir[i][1],K),r,T)
-            payoff_for_var.append(a)
-        means[L] = np.mean(payoff_for_var)
-        variances[L]=np.var(payoff_for_var)
-
-    else:
-
-        for l in range(L):
-            multicir=multiCIR_ML(alpha, b, sigma, l, T, S_0, N)
-            list_payoff_level=[]
-            payoff_for_var=[]
-            
-            for i in range(N):
-                a=calcul.pv_calc(calcul.payoff_calc(multicir[i][0][1],K),r,T)
-                b=calcul.pv_calc(calcul.payoff_calc(multicir[i][1][1],K),r,T)
-                payoff_for_var.append(a)
-                list_payoff_level.append(a-b)
-            
-            list_payoff.append(list_payoff_level)
-            means[l] = np.mean(list_payoff_level)
-            variances[l]=np.var(payoff_for_var)
-        return means,variances
-                
-
-
-
-                
-            
-
-    

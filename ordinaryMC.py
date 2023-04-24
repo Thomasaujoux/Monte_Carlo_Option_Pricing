@@ -5,6 +5,10 @@ import calcul
 
 
 def CIR(alpha, b, sigma, T, k, S_0):
+    '''
+    Fonction qui simule le CIR classique
+    '''
+
     dt = T/k
     S = np.zeros(k+1)
     S[0] = S_0
@@ -17,6 +21,9 @@ def CIR(alpha, b, sigma, T, k, S_0):
 
 
 def multiCIR(alpha, b, sigma, T, k, S_0, nb_samples): 
+    '''
+    Fonction qui renvoie un tableau de simulation CIR pour tous les échantillons
+    '''
     multiCIR = []
     for i in range(nb_samples): 
         multiCIR.append(CIR(alpha, b, sigma, T, k, S_0))
@@ -27,13 +34,13 @@ def multiCIR(alpha, b, sigma, T, k, S_0, nb_samples):
 
 def ordinary_mc_sim(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
     """
-    Conducts MC simulation,
+    Simulation du Monte Carlo pour calculer l'option pricing
     
     INPUT:
-        nb_samples (int): Number of samples in simulation
-        k (int): Number of price step we aim to simulate in each path
-        S_0 (float): Underlying asset price at time zero
-        T (float): Time period of option contract
+        nb_samples (int): Nombre d'échantillon
+        k (int): Nombre de price step 
+        S_0 (float): Asset price au temps 0
+        T (float): option contract
         r (float): Risk-netural interest rate
         sigma (float): Volatility in the environment
         K (float): Exercise price of the option
@@ -41,7 +48,7 @@ def ordinary_mc_sim(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
         b (float): taux de convergence
         
     OUTPUT:
-        (Numpy.ndarray): A one-dimensional array of present value of simulated payoffs
+        (Numpy.ndarray): tableau des present values des payoffs simulés
     """
     present_payoffs = np.zeros(nb_samples)
     multiCIR2 = multiCIR(alpha, b, sigma, T, k, S_0, nb_samples)
@@ -49,5 +56,5 @@ def ordinary_mc_sim(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
     for i in range(nb_samples):
         present_payoffs[i] = calcul.pv_calc(calcul.payoff_calc(multiCIR2[i], K), r, T)
     return(present_payoffs)
-# et oui on retourne tout le tableau pour les stats desc : box plot, diagramme de rep etc...
+
 
