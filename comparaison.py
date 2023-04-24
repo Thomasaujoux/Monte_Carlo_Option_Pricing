@@ -88,7 +88,7 @@ def CPU(optimal_sample,k, S_0, T, r, sigma, K, alpha, b, *,method):
     time = []
 
     if method == 'ordinary':
-        for i in range(3):
+        for i in range(100):
             print(i)
             start = timer()
             present_payoffs = ordinaryMC.ordinary_mc_sim(optimal_sample,k, S_0, T, r, sigma, K, alpha, b)
@@ -97,7 +97,7 @@ def CPU(optimal_sample,k, S_0, T, r, sigma, K, alpha, b, *,method):
             time.append(end - start) 
 
     elif method == 'QMC':
-        for i in range(3):
+        for i in range(100):
             print(i)
             start = timer()
             present_payoffs = QMC.QMC_mc_sim(optimal_sample, k, S_0, T, r, sigma, K, alpha, b)
@@ -106,7 +106,7 @@ def CPU(optimal_sample,k, S_0, T, r, sigma, K, alpha, b, *,method):
             time.append(end - start) 
 
     elif method == 'QMC_random':
-        for i in range(3):
+        for i in range(100):
             print(i)
             start = timer()
             present_payoffs = QMC.QMC_mc_sim_random(optimal_sample, k, S_0, T, r, sigma, K, alpha, b)
@@ -115,7 +115,7 @@ def CPU(optimal_sample,k, S_0, T, r, sigma, K, alpha, b, *,method):
             time.append(end - start) 
 
     elif method == 'MLMC':
-        for i in range(3):
+        for i in range(100):
             print(i)
             start = timer()
             present_payoffs = MLMC.ML_mc_sim(k, S_0, T, r, sigma, K, alpha, b)
@@ -132,7 +132,7 @@ def mse_time(nb_samples, k, S_0, T, r, sigma, K, alpha, b, mean_pv_payoffs_cvg, 
 
     if method == 'ordinary':
         estimateur_values = []
-        for i in range(3):
+        for i in range(100):
             present_payoffs = ordinaryMC.ordinary_mc_sim(nb_samples,k, S_0, T, r, sigma, K, alpha, b) 
             mean_pv_payoffs = np.mean(present_payoffs)
             estimateur_values.append(mean_pv_payoffs)
@@ -141,7 +141,7 @@ def mse_time(nb_samples, k, S_0, T, r, sigma, K, alpha, b, mean_pv_payoffs_cvg, 
 
     elif method == 'QMC':
         estimateur_values = []
-        for i in range(3):
+        for i in range(100):
             present_payoffs = QMC.QMC_mc_sim(nb_samples,k, S_0, T, r, sigma, K, alpha, b) 
             mean_pv_payoffs = np.mean(present_payoffs)
             estimateur_values.append(mean_pv_payoffs)
@@ -150,7 +150,7 @@ def mse_time(nb_samples, k, S_0, T, r, sigma, K, alpha, b, mean_pv_payoffs_cvg, 
 
     elif method == 'QMC_random':
         estimateur_values = []
-        for i in range(3):
+        for i in range(100):
             present_payoffs = QMC.QMC_mc_sim_random(nb_samples,k, S_0, T, r, sigma, K, alpha, b) 
             mean_pv_payoffs = np.mean(present_payoffs)
             estimateur_values.append(mean_pv_payoffs)
@@ -159,7 +159,7 @@ def mse_time(nb_samples, k, S_0, T, r, sigma, K, alpha, b, mean_pv_payoffs_cvg, 
 
     elif method == 'MLMC':
         estimateur_values = []
-        for i in range(3):
+        for i in range(100):
             present_payoffs = MLMC.ML_mc_sim(k, S_0, T, r, sigma, K, alpha, b)[0]
             estimateur_values.append(present_payoffs)
         comparaison = [mean_pv_payoffs_cvg] * len(estimateur_values)
