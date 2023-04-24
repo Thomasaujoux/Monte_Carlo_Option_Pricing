@@ -1,38 +1,29 @@
 import numpy as np
-from scipy import stats
-import matplotlib.pyplot as plt
-import CIR
-import comparaison
 
-def payoff_calc(S_ti, K):
-    """
-    This function calculates future payoff of the asian option based on arithmetic average of the price path
-    
-    INPUT:
-        S_ti (numpy.ndarray): A one-dimensional array of stock final prices
-        K (float): Exercise price of the option
-    
-    OUTPUT:
-        (numpy.ndarray): A one dimensional array of payoffs for different prices
-    """
-    
-    payoff = np.maximum(0, np.mean(S_ti) - K)
-    return payoff
+import calcul
 
-def pv_calc(payoff, r, T):
-    """
-    Calculates present value of an amount of money in future.
-    
-    INPUT:
-        payoff (float): Future value of money
-        r (float): Risk neutral interest rate
-        T (float): Period of time
-    
-    OUTPUT:
-        (float): Present value of payoff
-    """
-    
-    return payoff * np.exp(-r * T)
+
+
+def CIR(alpha, b, sigma, T, k, S_0):
+    dt = T/k
+    S = np.zeros(k+1)
+    S[0] = S_0
+    for i in range(1, k+1):
+        dS = alpha * (b - S[i-1]) * dt + sigma * np.sqrt(S[i-1] ) * np.random.normal(scale=np.sqrt(dt))
+        S[i] = S[i-1] + dS
+        if S[i] < 0 : S[i] = "Erreur"
+    return S
+
+
+
+def multiCIR(alpha, b, sigma, T, k, S_0, nb_samples): 
+    multiCIR = []
+    for i in range(nb_samples): 
+        multiCIR.append(CIR(alpha, b, sigma, T, k, S_0))
+    return multiCIR
+
+
+
 
 def ordinary_mc_sim(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
     """
@@ -53,40 +44,10 @@ def ordinary_mc_sim(nb_samples, k, S_0, T, r, sigma, K, alpha, b):
         (Numpy.ndarray): A one-dimensional array of present value of simulated payoffs
     """
     present_payoffs = np.zeros(nb_samples)
-    multiCIR = CIR.multiCIR(alpha, b, sigma, T, k, S_0, nb_samples)
+    multiCIR2 = multiCIR(alpha, b, sigma, T, k, S_0, nb_samples)
     
     for i in range(nb_samples):
-        present_payoffs[i] = pv_calc(payoff_calc(multiCIR[i], K), r, T)
+        present_payoffs[i] = calcul.pv_calc(calcul.payoff_calc(multiCIR2[i], K), r, T)
     return(present_payoffs)
 # et oui on retourne tout le tableau pour les stats desc : box plot, diagramme de rep etc...
 
-def sim_iterator(max_sample, k, S_0, T, r, sigma, K, alpha, b):
-    """
-    Iterates simulation with different sample sizes (form 10 to a maximum size with steps of 10)
-    
-    INPUT:
-        max_sample (int): Maximum sample size for the iteration of simulations
-        k (int): Number of price step we aim to simulate in each path
-        S_0 (float): Underlying asset price at time zero
-        T (float): Time period of option contract
-        r (float): Risk-netural interest rate
-        sigma (float): Volatility in the environment
-        x_price (float): Exercise price of the option
-        K (float): Exercise price of the option
-        alpha (float): taux de convergence
-        b (float): taux de convergence
-    
-    OUTPUT:
-        (numpy.ndarray): confidence intervals of the simulations #pas encore intégré
-        (numpy.ndarray): price estimations of the simulations
-    """
-    
-    mean_pv_payoffs = np.zeros(int(max_sample / 10))
-    confidence_intervals = np.array([None, None])
-
-    for nb_samples in range(10, max_sample + 1, 10):
-        present_payoffs = ordinary_mc_sim(nb_samples,k, S_0, T, r, sigma, K, alpha, b)
-        mean_pv_payoffs[int(nb_samples/10) - 1] = np.mean(present_payoffs)
-        confidence_intervals = np.row_stack((confidence_intervals, comparaison.CI_calc(present_payoffs)))
-
-    return(mean_pv_payoffs, confidence_intervals)
